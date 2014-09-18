@@ -6,6 +6,7 @@ from optparse import OptionParser
 logging.basicConfig(format="%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s",
     filename='3y_cms_stats.log', level=logging.DEBUG)
 def execute(date_string, access_log, output_dir):
+
     try:
         if access_log:
             fp = open(access_log, 'r')
@@ -36,7 +37,7 @@ def execute(date_string, access_log, output_dir):
             key = map['key']
             if key == 'show':
                 dataArray = map['data']
-                handleShow(logid=logid,entry=entry,pid=pid,tid=tid,groups=dataArray);
+                handleShow(logid=logid,entry=entry,pid=pid,tid=tid,groups=dataArray,tk=tk);
             elif key == "tctc":
                 handleClick()
             elif key == "thi":
@@ -47,7 +48,7 @@ def execute(date_string, access_log, output_dir):
         sys.exit(1)
     sys.exit(0)
 #处理展示上报日志
-def handleShow(logid=None,entry=None,pid=None,tid=None,groups=None):
+def handleShow(logid=None,entry=None,pid=None,tid=None,groups=None,tk=None):
     for group in groups:
         ids = group['ids']
         for id in ids:
