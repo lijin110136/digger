@@ -6,6 +6,10 @@ from optparse import OptionParser
 logging.basicConfig(format="%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s",
     filename='3y_cms_stats.log', level=logging.DEBUG)
 def execute(date_string, access_log, output_dir):
+    showDict = {}
+    clickDict = {}
+    installDict = {}
+    validClickDict = {}
 
     try:
         if access_log:
@@ -17,6 +21,9 @@ def execute(date_string, access_log, output_dir):
             #list[0]格式如下：2014-09-18 11:10:14 [-7329942015814772154]- com.dianxinos.dxbh
             pkg = list[0][list[0].rfind('-')+2:]
             mdu = list[1]
+            #工具箱的module为adsdk
+            if(not mdu == "adsdk"):
+                continue
             child = list[2]
             tk = list[3]
             lc = list[4]
@@ -37,6 +44,7 @@ def execute(date_string, access_log, output_dir):
             key = map['key']
             if key == 'show':
                 dataArray = map['data']
+                key = 
                 handleShow(logid=logid,entry=entry,pid=pid,tid=tid,groups=dataArray,tk=tk);
             elif key == "tctc":
                 handleClick()
