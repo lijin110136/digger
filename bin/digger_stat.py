@@ -5,10 +5,8 @@ import json
 from optparse import OptionParser
 logging.basicConfig(format="%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s",
     filename='3y_cms_stats.log', level=logging.DEBUG)
-showDict = {}
-clickDict = {}
-installDict = {}
-validClickDict = {}
+adDict = {}
+
 def execute(date_string, access_log, output_dir):
     try:
         if access_log:
@@ -49,14 +47,14 @@ def execute(date_string, access_log, output_dir):
             elif key == "tctc":
                 gid = str(map['gid'])
                 id = str(map['id'])
-                key = "\t".join([entry,pid,tid,gid,pkg,lc,op,v])
+                key = "\t".join([entry,pid,tid,pkg,lc,op,v,gid,id])
                 handleClick(key, tk)
             elif key == "thi":
                 handleInstall()
             elif key == "tctb" or key == "tctp":
                 handleValidClick()
-        saveResultAsFile(date_string,showDict,"\t".join(["#entry","pid","tid","pkg" ,"lc","op","v","pv","uv","pv/uv"]),"../result/showResult.log.%s" %(date_string))
-        saveResultAsFile(date_string,clickDict,"\t".join(["#entry","pid","tid","gid","pkg" ,"lc","op","v","pv","uv","pv/uv"]),"../result/clickResult.log.%s" %(date_string))
+        saveResultAsFile(date_string,adDict,"\t".join(["#entry","pid","tid","pkg" ,"lc","op","v","showpv","showuv","clickpv","clickuv"]),"../result/showResult.log.%s" %(date_string))
+        #saveResultAsFile(date_string,adDict,"\t".join(["#entry","pid","tid","gid","pkg" ,"lc","op","v","pv","uv","pv/uv"]),"../result/clickResult.log.%s" %(date_string))
     except IOError as ioe:
         print >> sys.stderr, "{0}".format(ioe)
         sys.exit(1)
@@ -68,37 +66,42 @@ def saveResultAsFile(date_string,dict,head,output):
     try:
         file.write(head)
         for key,value in dict.items():
-            pv = value['pv']
-            uv = len(value['tokenSet'])
-            file.write("%s\t%s\t%s\t%.2f\n" %(key,pv,uv,pv/uv))
+            showPv = value["showPvKey"]
+            showUv = len(value['showTokenKey'])
+            clickPv = value["clickPvKey"]
+            clickUv = len(value['clickTokenKey'])
+            file.write("%s\t%s\t%s\t%s\t%s\n" %(key,showPv,showUv,clickPv,clickUv))
     finally:
         file.close()
 
-def incrementPVUV(dict, key, token):
+def incrementPVUV(dict, key, pvKey,tokenKey, token):
     if not dict.has_key(key):
-        value = {"pv": 1, "tokenSet": set()}
-        value['tokenSet'].add(token)
+        value = {pvKey: 1, tokenKey: set()}
+        value[tokenKey].add(token)
         dict[key] = value
     else:
         value = dict[key]
-        value['pv'] += 1
-        value['tokenSet'].add(token)
+        value[pvKey] += 1
+        value[tokenKey].add(token)
 
 
 #处理展示上报日志
 def handleShow(key=None,groups=None,tk=None):
     basekey = key
+    tokenKey = "showTokenKey"
+    pvKey = "showPvKey"
     for group in groups:
         gid = group['gid']
         ids = group['ids']
         for id in ids:
             key =  "%s\t%s\t%s" %(basekey,gid,id)
-            incrementPVUV(showDict,key,tk)
-
+            incrementPVUV(adDict,key,pvKey,tokenKey,tk)
 
 #处理点击上报日志
 def handleClick(key=None,tk=None):
-    incrementPVUV(clickDict,key,tk)
+    tokenKey = "clickTokenKey"
+    pvKey = "clickPvKey"
+    incrementPVUV(adDict,key,pvKey,tokenKey,tk)
 
 #处理安装上报日志
 def handleInstall():
