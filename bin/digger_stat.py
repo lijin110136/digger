@@ -5,12 +5,11 @@ import json
 from optparse import OptionParser
 logging.basicConfig(format="%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s",
     filename='3y_cms_stats.log', level=logging.DEBUG)
+showDict = {}
+clickDict = {}
+installDict = {}
+validClickDict = {}
 def execute(date_string, access_log, output_dir):
-    showDict = {}
-    clickDict = {}
-    installDict = {}
-    validClickDict = {}
-
     try:
         if access_log:
             fp = open(access_log, 'r')
@@ -27,6 +26,7 @@ def execute(date_string, access_log, output_dir):
             child = list[2]
             tk = list[3]
             lc = list[4]
+            op = str(list[5])
             adsdkv = list[6]
             v = list[7]
             ts = list[8]
@@ -37,36 +37,74 @@ def execute(date_string, access_log, output_dir):
             map = json.loads(data)
             logid = map['logid']
             entry = map['entry']
-            pid = map['pid']
-            tid = map['tid']
+            pid = str(map['pid'])
+            tid = str(map['tid'])
             if not map.has_key('key'):
                 continue
             key = map['key']
             if key == 'show':
                 dataArray = map['data']
-                key = 
-                handleShow(logid=logid,entry=entry,pid=pid,tid=tid,groups=dataArray,tk=tk);
+                key = "\t".join([entry,pid,tid,pkg,lc,op,v])
+                handleShow(key=key,groups=dataArray,tk=tk);
             elif key == "tctc":
-                handleClick()
+                gid = str(map['gid'])
+                id = str(map['id'])
+                key = "\t".join([entry,pid,tid,gid,pkg,lc,op,v])
+                handleClick(key, tk)
             elif key == "thi":
                 handleInstall()
-
+            elif key == "tctb" or key == "tctp":
+                handleValidClick()
+        saveResultAsFile(date_string,showDict,"\t".join(["#entry","pid","tid","pkg" ,"lc","op","v","pv","uv","pv/uv"]),"../result/showResult.log.%s" %(date_string))
+        saveResultAsFile(date_string,clickDict,"\t".join(["#entry","pid","tid","gid","pkg" ,"lc","op","v","pv","uv","pv/uv"]),"../result/clickResult.log.%s" %(date_string))
     except IOError as ioe:
         print >> sys.stderr, "{0}".format(ioe)
         sys.exit(1)
     sys.exit(0)
+def saveResultAsFile(date_string,dict,head,output):
+    head = head.strip('\n')
+    head = head + '\n'
+    file = open(output,'w')
+    try:
+        file.write(head)
+        for key,value in dict.items():
+            pv = value['pv']
+            uv = len(value['tokenSet'])
+            file.write("%s\t%s\t%s\t%.2f\n" %(key,pv,uv,pv/uv))
+    finally:
+        file.close()
+
+def incrementPVUV(dict, key, token):
+    if not dict.has_key(key):
+        value = {"pv": 1, "tokenSet": set()}
+        value['tokenSet'].add(token)
+        dict[key] = value
+    else:
+        value = dict[key]
+        value['pv'] += 1
+        value['tokenSet'].add(token)
+
+
 #处理展示上报日志
-def handleShow(logid=None,entry=None,pid=None,tid=None,groups=None,tk=None):
+def handleShow(key=None,groups=None,tk=None):
+    basekey = key
     for group in groups:
+        gid = group['gid']
         ids = group['ids']
         for id in ids:
-            print id
-    pass
+            key =  "%s\t%s\t%s" %(basekey,gid,id)
+            incrementPVUV(showDict,key,tk)
+
+
 #处理点击上报日志
-def handleClick():
-    pass
+def handleClick(key=None,tk=None):
+    incrementPVUV(clickDict,key,tk)
+
 #处理安装上报日志
 def handleInstall():
+    pass
+#处理有效点击上报日志
+def handleValidClick():
     pass
 
 def main():
