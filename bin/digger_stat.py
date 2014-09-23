@@ -2,11 +2,12 @@
 import logging
 import sys
 import json
+import types
 from optparse import OptionParser
 logging.basicConfig(format="%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s",
     filename='3y_cms_stats.log', level=logging.DEBUG)
 adDict = {}
-
+productDict = {}
 def execute(date_string, access_log, output_dir):
     try:
         if access_log:
@@ -50,27 +51,40 @@ def execute(date_string, access_log, output_dir):
                 key = "\t".join([entry,pid,tid,pkg,lc,op,v,gid,id])
                 handleClick(key, tk)
             elif key == "thi":
-                handleInstall()
+                gid = str(map['gid'])
+                id = str(map['id'])
+                key = "\t".join([entry,pid,tid,pkg,lc,op,v,gid,id])
+                handleInstall(key, tk)
             elif key == "tctb" or key == "tctp":
-                handleValidClick()
-        saveResultAsFile(date_string,adDict,"\t".join(["#entry","pid","tid","pkg" ,"lc","op","v","showpv","showuv","clickpv","clickuv"]),"../result/showResult.log.%s" %(date_string))
-        #saveResultAsFile(date_string,adDict,"\t".join(["#entry","pid","tid","gid","pkg" ,"lc","op","v","pv","uv","pv/uv"]),"../result/clickResult.log.%s" %(date_string))
+                gid = str(map['gid'])
+                id = str(map['id'])
+                key = "\t".join([entry,pid,tid,pkg,lc,op,v,gid,id])
+                handleValidClick(key, tk)
+        saveResultAsFile(date_string,adDict,["showPvKey", "showTokenKey", "clickPvKey", "clickTokenKey", "installPvKey", "installTokenKey", "validClickPvKey", "validClickTokenKey"],"\t".join(["#entry","pid","tid","pkg" ,"lc","op","v","showpv","showuv","clickpv","clickuv","installpv","installuv","validclickpv","validclickuv"]),"../result/adPv.log.%s" %(date_string))
     except IOError as ioe:
         print >> sys.stderr, "{0}".format(ioe)
         sys.exit(1)
     sys.exit(0)
-def saveResultAsFile(date_string,dict,head,output):
+def saveResultAsFile(date_string,dict,columns,head,output):
     head = head.strip('\n')
     head = head + '\n'
     file = open(output,'w')
     try:
         file.write(head)
         for key,value in dict.items():
-            showPv = value["showPvKey"]
-            showUv = len(value['showTokenKey'])
-            clickPv = value["clickPvKey"]
-            clickUv = len(value['clickTokenKey'])
-            file.write("%s\t%s\t%s\t%s\t%s\n" %(key,showPv,showUv,clickPv,clickUv))
+            collist = []
+            for col in columns:
+                colvalue = '0'
+                if value.has_key(col):
+                    subvalue = value[col]
+                    if type(subvalue) is types.IntType:
+                        colvalue = str(subvalue)
+                    elif isinstance(subvalue,set):
+                        colvalue = str(len(subvalue))
+                    else:
+                        colvalue = str(subvalue)
+                collist.append(colvalue)
+            file.write(key + "\t".join(collist) + "\n")
     finally:
         file.close()
 
@@ -81,8 +95,14 @@ def incrementPVUV(dict, key, pvKey,tokenKey, token):
         dict[key] = value
     else:
         value = dict[key]
-        value[pvKey] += 1
-        value[tokenKey].add(token)
+        if not value.has_key(pvKey):
+            value[pvKey] = 1
+        else:
+            value[pvKey] += 1
+        if not value.has_key(tokenKey):
+            value[tokenKey] = set([token])
+        else:
+            value[tokenKey].add(token)
 
 
 #处理展示上报日志
@@ -104,11 +124,15 @@ def handleClick(key=None,tk=None):
     incrementPVUV(adDict,key,pvKey,tokenKey,tk)
 
 #处理安装上报日志
-def handleInstall():
-    pass
+def handleInstall(key=None,tk=None):
+    tokenKey = "installTokenKey"
+    pvKey = "installPvKey"
+    incrementPVUV(adDict,key,pvKey,tokenKey,tk)
 #处理有效点击上报日志
-def handleValidClick():
-    pass
+def handleValidClick(key=None,tk=None):
+    tokenKey = "validClickTokenKey"
+    pvKey = "validClickPvKey"
+    incrementPVUV(adDict,key,pvKey,tokenKey,tk)
 
 def main():
     usage_str = "usage: %prog [options] date [access_log]"
