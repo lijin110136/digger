@@ -8,6 +8,24 @@ logging.basicConfig(format="%(levelname)s %(asctime)s %(module)s %(process)d %(t
     filename='3y_cms_stats.log', level=logging.DEBUG)
 adDict = {}
 productDict = {}
+projectDict = {}
+groupDict = {}
+entryDict = {}
+
+showPvKey = "showPvKey"
+showTokenKey = "showTokenKey"
+clickPvKey = "clickPvKey"
+clickTokenKey = "clickTokenKey"
+installPvKey = "installPvKey"
+installTokenKey = "installTokenKey"
+validClickPvKey = "validClickPvKey"
+validClickTokenKey = "validClickTokenKey"
+boxshowPvKey = "boxshowPvKey"
+boxshowTokenKey = "boxshowTokenKey"
+homevisitPvKey = "homevisitPvKey"
+homevisitTokenKey = "homevisitTokenKey"
+entryvisitPvKey = "entryvisitPvKey"
+entryvisitTokenKey = "entryvisitTokenKey"
 def execute(date_string, access_log, output_dir):
     try:
         if access_log:
@@ -41,26 +59,90 @@ def execute(date_string, access_log, output_dir):
             if not map.has_key('key'):
                 continue
             key = map['key']
+            #处理展示上报日志
             if key == 'show':
                 dataArray = map['data']
-                key = "\t".join([entry,pid,tid,pkg,lc,op,v])
-                handleShow(key=key,groups=dataArray,tk=tk);
+                #统计入口访问工具箱日志
+                key = "\t".join([pkg,lc,v,child,entry,op,pid,tid])
+                incrementPVUV(entryDict,key,entryvisitPvKey,entryvisitTokenKey,tk)
+                for group in dataArray:
+                    gid = str(group['gid'])
+                    ids = group['ids']
+                    for id in ids:
+                        #广告数据统计
+                        id = str(id)
+                        key = "\t".join([pkg,lc,v,child,entry,op,pid,tid,gid,id])
+                        incrementPVUV(adDict,key,showPvKey,showTokenKey,tk)
+                        #广告组数据统计
+                        key = "\t".join([pkg,lc,v,child,op,pid,tid,gid])
+                        incrementPVUV(groupDict,key,showPvKey,showTokenKey,tk)
+                        #项目数据统计
+                        key = "\t".join([pkg,lc,v,child,op,pid])
+                        incrementPVUV(projectDict,key,showPvKey,showTokenKey,tk)
+
+            #处理点击上报日志
             elif key == "tctc":
                 gid = str(map['gid'])
                 id = str(map['id'])
-                key = "\t".join([entry,pid,tid,pkg,lc,op,v,gid,id])
-                handleClick(key, tk)
+                #广告数据统计
+                key = "\t".join([pkg,lc,v,child,entry,op,pid,tid,gid,id])
+                incrementPVUV(adDict,key,clickPvKey,clickTokenKey,tk)
+                #广告组数据统计
+                key = "\t".join([pkg,lc,v,child,op,pid,tid,gid])
+                incrementPVUV(groupDict,key,clickPvKey,clickTokenKey,tk)
+                #项目数据统计
+                key = "\t".join([pkg,lc,v,child,op,pid])
+                incrementPVUV(projectDict,key,clickPvKey,clickTokenKey,tk)
+                #产品数据统计
+                key = "\t".join([pkg,lc,v,child,ls,op])
+                incrementPVUV(productDict,key,clickPvKey,clickTokenKey,tk)
+            #处理安装上报日志
             elif key == "thi":
                 gid = str(map['gid'])
                 id = str(map['id'])
-                key = "\t".join([entry,pid,tid,pkg,lc,op,v,gid,id])
-                handleInstall(key, tk)
+                #广告数据统计
+                key = "\t".join([pkg,lc,v,child,entry,op,pid,tid,gid,id])
+                incrementPVUV(adDict,key,installPvKey,installTokenKey,tk)
+                 #广告组数据统计
+                key = "\t".join([pkg,lc,v,child,op,pid,tid,gid])
+                incrementPVUV(groupDict,key,installPvKey,installTokenKey,tk)
+                #项目数据统计
+                key = "\t".join([pkg,lc,v,child,op,pid])
+                incrementPVUV(projectDict,key,installPvKey,installTokenKey,tk)
+                #产品数据统计
+                key = "\t".join([pkg,lc,v,child,ls,op])
+                incrementPVUV(productDict,key,installPvKey,installTokenKey,tk)
+            #处理有效点击上报日志
             elif key == "tctb" or key == "tctp":
                 gid = str(map['gid'])
                 id = str(map['id'])
-                key = "\t".join([entry,pid,tid,pkg,lc,op,v,gid,id])
-                handleValidClick(key, tk)
-        saveResultAsFile(date_string,adDict,["showPvKey", "showTokenKey", "clickPvKey", "clickTokenKey", "installPvKey", "installTokenKey", "validClickPvKey", "validClickTokenKey"],"\t".join(["#entry","pid","tid","pkg" ,"lc","op","v","showpv","showuv","clickpv","clickuv","installpv","installuv","validclickpv","validclickuv"]),"../result/adPv.log.%s" %(date_string))
+                #广告数据统计
+                key = "\t".join([pkg,lc,v,child,entry,op,pid,tid,gid,id])
+                incrementPVUV(adDict,key,validClickPvKey,validClickTokenKey,tk)
+                 #广告组数据统计
+                key = "\t".join([pkg,lc,v,child,op,pid,tid,gid])
+                incrementPVUV(groupDict,key,validClickPvKey,validClickTokenKey,tk)
+                #项目数据统计
+                key = "\t".join([pkg,lc,v,child,op,pid])
+                incrementPVUV(projectDict,key,validClickPvKey,validClickTokenKey,tk)
+                #产品数据统计
+                key = "\t".join([pkg,lc,v,child,ls,op])
+                incrementPVUV(productDict,key,validClickPvKey,validClickTokenKey,tk)
+            #处理工具箱访问日志
+            elif key == "boxshow":
+                #产品数据统计
+                key = "\t".join([pkg,lc,v,child,ls,op])
+                incrementPVUV(productDict,key,boxshowPvKey,boxshowTokenKey,tk)
+            #处理应用首页访问日志
+            elif key == "homevisit":
+                #产品数据统计
+                key = "\t".join([pkg,lc,v,child,ls,op])
+                incrementPVUV(productDict,key,homevisitPvKey,homevisitTokenKey,tk)
+        saveResultAsFile(date_string,adDict,[showPvKey, showTokenKey, clickPvKey, clickTokenKey, installPvKey, installTokenKey, validClickPvKey, validClickTokenKey],"\t".join(["#pkg","lc","v","child" ,"entry","op","pid","tid","gid","id","showpv","showuv","clickpv","clickuv","installpv","installuv","validclickpv","validclickuv"]),"../result/adPv.log.%s" %(date_string))
+        saveResultAsFile(date_string,groupDict,[showPvKey, showTokenKey, clickPvKey, clickTokenKey, installPvKey, installTokenKey, validClickPvKey, validClickTokenKey],"\t".join(["#pkg","lc","v","child" ,"op","pid","tid","gid","showpv","showuv","clickpv","clickuv","installpv","installuv","validclickpv","validclickuv"]),"../result/adGroupPv.log.%s" %(date_string))
+        saveResultAsFile(date_string,projectDict,[showPvKey, showTokenKey, clickPvKey, clickTokenKey, installPvKey, installTokenKey, validClickPvKey, validClickTokenKey],"\t".join(["#pkg","lc","v","child" ,"op","pid","showpv","showuv","clickpv","clickuv","installpv","installuv","validclickpv","validclickuv"]),"../result/projectPv.log.%s" %(date_string))
+        saveResultAsFile(date_string,productDict,[homevisitPvKey,homevisitTokenKey,boxshowPvKey, boxshowTokenKey, clickPvKey, clickTokenKey, installPvKey, installTokenKey, validClickPvKey, validClickTokenKey],"\t".join(["#pkg","lc","v","child" ,"licene","op","homevisitbpv","homevisituv","boxshowpv","boxshowuv","clickpv","clickuv","installpv","installuv","validclickpv","validclickuv"]),"../result/productPv.log.%s" %(date_string))
+        saveResultAsFile(date_string,entryDict,[entryvisitPvKey,entryvisitTokenKey],"\t".join(["#pkg","lc","v","child" ,"entry","op","pid","tid","entryvisitpv","entryvisituv"]),"../result/entryPv.log.%s" %(date_string))
     except IOError as ioe:
         print >> sys.stderr, "{0}".format(ioe)
         sys.exit(1)
@@ -84,7 +166,7 @@ def saveResultAsFile(date_string,dict,columns,head,output):
                     else:
                         colvalue = str(subvalue)
                 collist.append(colvalue)
-            file.write(key + "\t".join(collist) + "\n")
+            file.write("%s\t%s\n" %(key,"\t".join(collist)))
     finally:
         file.close()
 
@@ -103,36 +185,6 @@ def incrementPVUV(dict, key, pvKey,tokenKey, token):
             value[tokenKey] = set([token])
         else:
             value[tokenKey].add(token)
-
-
-#处理展示上报日志
-def handleShow(key=None,groups=None,tk=None):
-    basekey = key
-    tokenKey = "showTokenKey"
-    pvKey = "showPvKey"
-    for group in groups:
-        gid = group['gid']
-        ids = group['ids']
-        for id in ids:
-            key =  "%s\t%s\t%s" %(basekey,gid,id)
-            incrementPVUV(adDict,key,pvKey,tokenKey,tk)
-
-#处理点击上报日志
-def handleClick(key=None,tk=None):
-    tokenKey = "clickTokenKey"
-    pvKey = "clickPvKey"
-    incrementPVUV(adDict,key,pvKey,tokenKey,tk)
-
-#处理安装上报日志
-def handleInstall(key=None,tk=None):
-    tokenKey = "installTokenKey"
-    pvKey = "installPvKey"
-    incrementPVUV(adDict,key,pvKey,tokenKey,tk)
-#处理有效点击上报日志
-def handleValidClick(key=None,tk=None):
-    tokenKey = "validClickTokenKey"
-    pvKey = "validClickPvKey"
-    incrementPVUV(adDict,key,pvKey,tokenKey,tk)
 
 def main():
     usage_str = "usage: %prog [options] date [access_log]"
