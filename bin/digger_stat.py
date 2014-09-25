@@ -53,15 +53,15 @@ def execute(date_string, access_log, output_dir):
             #解析JSON数据
             map = json.loads(data)
             logid = map['logid']
-            entry = map['entry']
-            pid = str(map['pid'])
-            tid = str(map['tid'])
             if not map.has_key('key'):
                 continue
             key = map['key']
             #处理展示上报日志
             if key == 'show':
                 dataArray = map['data']
+                entry = str(map['entry'])
+                pid = str(map['pid'])
+                tid = str(map['tid'])
                 #统计入口访问工具箱日志
                 key = "\t".join([pkg,lc,v,child,entry,op,pid,tid])
                 incrementPVUV(entryDict,key,entryvisitPvKey,entryvisitTokenKey,tk)
@@ -84,6 +84,9 @@ def execute(date_string, access_log, output_dir):
             elif key == "tctc":
                 gid = str(map['gid'])
                 id = str(map['id'])
+                entry = str(map['entry'])
+                pid = str(map['pid'])
+                tid = str(map['tid'])
                 #广告数据统计
                 key = "\t".join([pkg,lc,v,child,entry,op,pid,tid,gid,id])
                 incrementPVUV(adDict,key,clickPvKey,clickTokenKey,tk)
@@ -100,6 +103,9 @@ def execute(date_string, access_log, output_dir):
             elif key == "thi":
                 gid = str(map['gid'])
                 id = str(map['id'])
+                entry = str(map['entry'])
+                pid = str(map['pid'])
+                tid = str(map['tid'])
                 #广告数据统计
                 key = "\t".join([pkg,lc,v,child,entry,op,pid,tid,gid,id])
                 incrementPVUV(adDict,key,installPvKey,installTokenKey,tk)
@@ -116,6 +122,9 @@ def execute(date_string, access_log, output_dir):
             elif key == "tctb" or key == "tctp":
                 gid = str(map['gid'])
                 id = str(map['id'])
+                entry = str(map['entry'])
+                pid = str(map['pid'])
+                tid = str(map['tid'])
                 #广告数据统计
                 key = "\t".join([pkg,lc,v,child,entry,op,pid,tid,gid,id])
                 incrementPVUV(adDict,key,validClickPvKey,validClickTokenKey,tk)
